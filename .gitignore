@@ -1,0 +1,29 @@
+# STM32CubeIDE build outputs
+/Debug/
+/Release/
+/build/
+*.o
+*.d
+*.su
+*.cyclo
+*.elf
+*.hex
+*.bin
+*.map
+*.list
+*.log
+
+# Local debugger and workspace state
+/.metadata/
+*.launch
+*.jlink
+JLinkLog.txt
+JLinkSettings.ini
+/.settings/language.settings.xml
+
+# Editor and OS files
+/.vscode/
+/.idea/
+Thumbs.db
+.DS_Store
+*~

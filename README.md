@@ -1,0 +1,31 @@
+# LoRa SX1278 Test
+SORAN ELECTRONIC FACTORY
+
+مثال تعليمي قيد التطوير لتجربة SX1278 433 MHz على لوحتين STM32G070CBT6 متطابقتين. الحالة الحالية: تهيئة العتاد والشاشة وJ-Link RTT وHeartbeat؛ مكتبة LoRa والتواصل اللاسلكي لم ينفذا بعد، والاختبار على البورد ما زال معلقًا.
+
+- [أسلوب العمل](SORAN_WORK_STYLE.md)
+- [الإعدادات وتقدم المشروع](PROJECT_PROGRESS.md)
+
+## البناء
+افتح المشروع في STM32CubeIDE، ثم Refresh وBuild لإعداد Debug. رفع البرنامج خطوة مستقلة.
+الشاشة تعرض LoRa SX1278 Test وLCD ready.
+
+## J-Link RTT
+ملفات SEGGER الأصلية وتراخيصها في SORAN_FW/segger/rtt.
+هذه مكتبة RTT داخل المتحكم؛ برنامج J-Link وإعداد مسبار CubeIDE منفصلان.
+وصل SWDIO إلى PA13 وSWCLK إلى PA14 مع GND وVTref إلى جهد الهدف 3.3V؛ VTref ليس مصدر تغذية.
+في RTT Viewer اختر STM32G070CB وSWD وسرعة 1000 kHz وTerminal 0 والبحث التلقائي.
+مع جلسة ديباك قائمة استخدم الاتصال القائم ثم Resume. الاتصال المستقل يتطلب عدم وجود جلسة أخرى تملك المسبار.
+رسالة البدء: LoRa_SX1278_Test started. تطبع مرة واحدة؛ أعد تشغيل الهدف بعد الاتصال إذا فاتتك.
+الإعداد NO_BLOCK_SKIP لا يوقف التطبيق عند غياب القارئ أو امتلاء المخزن، وقد يسقط النص.
+التطبيق يطبع رسالة بدء فقط. يمكن إضافة إدخال الأوامر لاحقًا عبر SEGGER_RTT_GetKey.
+تبقى تشخيصات RTT خارج مكتبة الراديو.
+
+## تنظيم الملفات
+- Core وDrivers: ملفات CubeMX وHAL.
+- SORAN_FW/drivers/lcd_v1_0: ملفا مكتبة LCD معًا.
+- SORAN_FW/segger/rtt: مكتبة SEGGER الأصلية مع بنية RTT وConfig الخاصة بها.
+- project/project_app.c وproject_app.h: تهيئة تجربة الشاشة والتشخيص؛ main يستدعي project_app_init بعد تهيئة العتاد، وproject_app_run داخل الحلقة الرئيسية.
+
+## تراخيص المكونات
+ترخيص SEGGER محفوظ في SORAN_FW/segger/rtt/LICENSE.md، وتراخيص ST وCMSIS داخل Drivers. تحتفظ المكونات بتراخيصها الأصلية. لم يحدد بعد ترخيص مستقل لكود SORAN؛ إتاحة المستودع للعامة لا تمنح تلقائيًا ترخيص إعادة استخدام هذا الكود.
