@@ -15,6 +15,8 @@ enum
     REG_RX_START = 0x10,        /* FIFO start address of the last received packet. */
     REG_IRQ = 0x12,             /* Latched IRQ flags. Write ones to clear them. */
     REG_RX_LENGTH = 0x13,       /* Payload length of the last received packet. */
+    REG_PACKET_SNR = 0x19,      /* Last packet SNR in signed quarter-dB units. */
+    REG_PACKET_RSSI = 0x1A,     /* Last packet RSSI before LF offset correction. */
     REG_CONFIG1 = 0x1D,         /* Bandwidth, coding rate and header mode. */
     REG_CONFIG2 = 0x1E,         /* Spreading factor and payload CRC. */
     REG_PREAMBLE_MSB = 0x20,    /* High byte of the preamble length. */
@@ -137,6 +139,7 @@ HAL_StatusTypeDef sx1278_init(sx1278_t *radio, const sx1278_config_t *config, ui
     };
 
     *version = 0;
+    radio->packet_rssi_valid = 0;
     radio->ready = 0;
     radio->irq_pending = 0;
     radio->config = *config;
@@ -192,6 +195,41 @@ void sx1278_notify_irq(sx1278_t *radio)
     radio->irq_pending = 1;
 }
 
+/*--------------------[ Received packet strength ]--------------------*/
+
+static void sample_packet_rssi(sx1278_t *radio)
+{
+    uint8_t snr_raw, rssi_raw;
+    radio->packet_rssi_valid = 0;
+    if (read_reg(radio, REG_PACKET_SNR, &snr_raw) != HAL_OK ||
+        read_reg(radio, REG_PACKET_RSSI, &rssi_raw) != HAL_OK)
+        return;
+
+    /* Semtech datasheet section 5.5.5, low-frequency port at 433 MHz. */
+    int16_t snr_quarters = snr_raw >= 128 ? (int16_t)snr_raw - 256 : snr_raw;
+    int16_t rssi_dbm = -164 + rssi_raw;
+    if (snr_quarters < 0)
+        rssi_dbm += snr_quarters / 4;
+    else
+        rssi_dbm += rssi_raw / 15; /* 16/15 slope correction for nonnegative SNR. */
+
+    radio->packet_rssi_dbm = rssi_dbm;
+    radio->packet_rssi_valid = 1;
+}
+
+/*======================================================================================================================
+ *  Function  : sx1278_packet_rssi
+ *  Purpose   : Read the RSSI estimate saved with the last copied packet.
+ *======================================================================================================================*/
+uint8_t sx1278_packet_rssi(const sx1278_t *radio, int16_t *dbm)
+{
+    if (!radio->packet_rssi_valid || !dbm)
+        return 0;
+
+    *dbm = radio->packet_rssi_dbm;
+    return 1;
+}
+
 /*======================================================================================================================
  *  Function  : sx1278_service
  *  Purpose   : Handle DIO0 events and return the radio to RX after TX.
@@ -239,7 +277,10 @@ sx1278_event_t sx1278_service(sx1278_t *radio, uint8_t *data, uint8_t capacity, 
             fifo_transfer(radio, NULL, data, size) != HAL_OK)
             event = SX1278_IO_ERROR;
         else
+        {
+            sample_packet_rssi(radio); /* Capture metrics before restarting RX. */
             event = SX1278_RX_DONE;
+        }
     }
 
     if (enter_rx(radio) != HAL_OK)

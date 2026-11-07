@@ -19,6 +19,8 @@ typedef struct
     volatile uint8_t irq_pending;   /* Set from EXTI, consumed in the main loop. */
     uint8_t transmitting;           /* A TX operation is awaiting completion. */
     uint8_t ready;                  /* Radio initialized and available. */
+    int16_t packet_rssi_dbm;        /* Estimated strength of the last copied packet. */
+    uint8_t packet_rssi_valid;      /* RSSI registers were read successfully. */
     uint32_t tx_started_ms;         /* HAL tick recorded when TX starts. */
 } sx1278_t;
 
@@ -44,3 +46,6 @@ void sx1278_notify_irq(sx1278_t *radio);
 
 /* Call in the main loop. RX_DONE sets length to the bytes copied into data. */
 sx1278_event_t sx1278_service(sx1278_t *radio, uint8_t *data, uint8_t capacity, uint8_t *length);
+
+/* Read the cached RSSI after RX_DONE. Returns 0 if unavailable. */
+uint8_t sx1278_packet_rssi(const sx1278_t *radio, int16_t *dbm);
