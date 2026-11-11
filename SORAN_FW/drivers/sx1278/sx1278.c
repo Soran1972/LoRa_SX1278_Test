@@ -40,7 +40,7 @@ enum
     IRQ_CRC_ERROR = 0x20,       /* Received payload failed its CRC check. */
     IRQ_TX_DONE = 0x08,         /* Packet transmission completed. */
     SPI_TIMEOUT_MS = 10,        /* Maximum wait per HAL SPI call. */
-    TX_TIMEOUT_MS = 1000        /* Maximum wait for transmission completion. */
+    TX_TIMEOUT_MS = 5000        /* Covers up to 255 bytes at SF10, BW125, CR4/8. */
 };
 
 /*--------------------------------[ SPI register and FIFO access ]--------------------------------*/
@@ -129,10 +129,10 @@ HAL_StatusTypeDef sx1278_init(sx1278_t *radio, const sx1278_config_t *config, ui
         {REG_MODE, MODE_FSK_SLEEP}, {REG_MODE, MODE_LORA_SLEEP},
         {REG_MODE, MODE_STANDBY},
         {REG_FRF, 0x6C}, {REG_FRF + 1, 0x40}, {REG_FRF + 2, 0x00}, /* 433 MHz */
-        {REG_PA, 0x80}, /* PA_BOOST, +2 dBm */
+        {REG_PA, 0x8F}, /* PA_BOOST, +17 dBm with the default PA DAC. */
         {REG_TX_BASE, 0}, {REG_RX_BASE, 0}, /* FIFO is shared between modes. */
-        {REG_CONFIG1, 0x72}, /* BW 125 kHz, CR 4/5, explicit header. */
-        {REG_CONFIG2, 0x74}, /* SF7 with payload CRC enabled. */
+        {REG_CONFIG1, 0x78}, /* BW 125 kHz, CR 4/8, explicit header. */
+        {REG_CONFIG2, 0xA4}, /* SF10 with payload CRC enabled. */
         {REG_CONFIG3, 0x04}, /* Automatic gain control enabled. */
         {REG_PREAMBLE_MSB, 0}, {REG_PREAMBLE_MSB + 1, 8}, /* Eight preamble symbols. */
         {REG_SYNC, 0x12} /* Sync word shared by both ends of the link. */

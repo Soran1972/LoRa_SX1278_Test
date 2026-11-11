@@ -38,7 +38,7 @@ typedef enum
 
 /*--------------------------------[ Public API ]--------------------------------*/
 
-/* Use the same 433 MHz, SF7, BW125, CR4/5 settings on both radios. */
+/* Use the same 433 MHz, SF10, BW125, CR4/8, +17 dBm settings on both radios. */
 HAL_StatusTypeDef sx1278_init(sx1278_t *radio, const sx1278_config_t *config, uint8_t *version);
 HAL_StatusTypeDef sx1278_send(sx1278_t *radio, const uint8_t *data, uint8_t length);
 /* Call from the DIO0 rising-edge callback. This only sets a flag. */
